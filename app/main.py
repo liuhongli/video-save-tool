@@ -19,6 +19,7 @@ STATIC_DIR = APP_DIR / "static"
 MAX_DOWNLOAD_SECONDS = int(os.getenv("MAX_DOWNLOAD_SECONDS", "180"))
 FILE_TTL_SECONDS = int(os.getenv("FILE_TTL_SECONDS", "1800"))
 PROGRESS_PATTERN = re.compile(r"\[download\]\s+(\d+(?:\.\d+)?)%")
+URL_PATTERN = re.compile(r"https?://[^\s]+")
 
 app = FastAPI(title="Video Save Tool")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -39,9 +40,14 @@ class DownloadJob:
 
 
 def validate_url(url: str) -> str:
-    parsed = urlparse(url.strip())
+    match = URL_PATTERN.search(url.strip())
+    if not match:
+        raise HTTPException(status_code=400, detail="请粘贴视频链接或包含链接的分享文案。")
+
+    raw_url = match.group(0).rstrip("，。；;、,)")
+    parsed = urlparse(raw_url)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        raise HTTPException(status_code=400, detail="Please enter a valid video URL.")
+        raise HTTPException(status_code=400, detail="请粘贴有效的视频链接。")
     return parsed.geturl()
 
 
