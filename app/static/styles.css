@@ -143,8 +143,7 @@ video {
   background: #0f172a;
 }
 
-.save-button,
-.fallback-link {
+.save-button {
   display: inline-grid;
   min-height: 48px;
   place-items: center;
@@ -159,8 +158,7 @@ video {
   cursor: pointer;
 }
 
-.save-button:hover,
-.fallback-link:hover {
+.save-button:hover {
   background: #194f52;
 }
 

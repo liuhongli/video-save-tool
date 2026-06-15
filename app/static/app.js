@@ -8,11 +8,11 @@ const progressBar = document.querySelector("#progressBar");
 const previewPanel = document.querySelector("#previewPanel");
 const videoPreview = document.querySelector("#videoPreview");
 const saveToAlbumButton = document.querySelector("#saveToAlbumButton");
-const downloadLink = document.querySelector("#downloadLink");
 const saveHint = document.querySelector("#saveHint");
 
 let pollTimer = null;
 let currentVideo = null;
+let currentObjectUrl = null;
 
 function setProgress(progress, message) {
   const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
@@ -33,6 +33,14 @@ function setSaveBusy(isBusy) {
   saveToAlbumButton.textContent = isBusy ? "准备保存..." : "保存到相册";
 }
 
+function resetCurrentVideo() {
+  currentVideo = null;
+  if (currentObjectUrl) {
+    URL.revokeObjectURL(currentObjectUrl);
+    currentObjectUrl = null;
+  }
+}
+
 async function readError(response) {
   try {
     const data = await response.json();
@@ -40,6 +48,33 @@ async function readError(response) {
   } catch {
     return "请求失败";
   }
+}
+
+async function prepareLocalVideo(job) {
+  saveToAlbumButton.disabled = true;
+  saveHint.textContent = "正在准备本地预览文件...";
+
+  const response = await fetch(job.previewUrl);
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  const blob = await response.blob();
+  const filename = job.filename || "video.mp4";
+  const file = new File([blob], filename, {
+    type: blob.type || "video/mp4",
+  });
+
+  currentObjectUrl = URL.createObjectURL(blob);
+  currentVideo = {
+    ...job,
+    file,
+    objectUrl: currentObjectUrl,
+  };
+
+  videoPreview.src = currentObjectUrl;
+  saveToAlbumButton.disabled = false;
+  saveHint.textContent = "点击保存后会打开系统分享面板，请选择“保存视频”或“存储到相册”。";
 }
 
 async function pollJob(jobId) {
@@ -55,12 +90,10 @@ async function pollJob(jobId) {
     clearInterval(pollTimer);
     pollTimer = null;
     setBusy(false);
-    currentVideo = job;
-    videoPreview.src = job.previewUrl;
-    downloadLink.href = job.saveUrl;
-    downloadLink.download = job.filename || "video.mp4";
     previewPanel.hidden = false;
-    setProgress(100, "下载完成，可以预览或保存");
+    setProgress(100, "视频已下载，正在准备本地预览...");
+    await prepareLocalVideo(job);
+    setProgress(100, "下载完成，可以预览或保存到相册");
     return;
   }
 
@@ -75,7 +108,7 @@ async function pollJob(jobId) {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearInterval(pollTimer);
-  currentVideo = null;
+  resetCurrentVideo();
   previewPanel.hidden = true;
   videoPreview.removeAttribute("src");
   videoPreview.load();
@@ -113,43 +146,32 @@ form.addEventListener("submit", async (event) => {
 });
 
 saveToAlbumButton.addEventListener("click", async () => {
-  if (!currentVideo?.saveUrl) {
+  if (!currentVideo?.file) {
+    saveHint.textContent = "视频文件还没有准备好，请稍等。";
     return;
   }
 
   setSaveBusy(true);
-  saveHint.textContent = "正在准备系统保存面板...";
+  saveHint.textContent = "正在打开系统保存面板...";
 
   try {
-    const response = await fetch(currentVideo.saveUrl);
-    if (!response.ok) {
-      throw new Error(await readError(response));
-    }
-
-    const blob = await response.blob();
-    const file = new File([blob], currentVideo.filename || "video.mp4", {
-      type: blob.type || "video/mp4",
-    });
-
-    if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+    if (navigator.canShare?.({ files: [currentVideo.file] }) && navigator.share) {
       await navigator.share({
-        files: [file],
+        files: [currentVideo.file],
         title: "保存视频",
       });
       saveHint.textContent = "如果系统面板里有“保存视频”，选择后即可保存到相册。";
       return;
     }
 
-    downloadLink.click();
-    saveHint.textContent = "当前浏览器不支持直接打开相册保存面板，已改为下载文件。";
+    saveHint.textContent = "当前浏览器不支持直接保存到相册，请用 iPhone Safari 打开本网站后再试。";
   } catch (error) {
     if (error.name === "AbortError") {
       saveHint.textContent = "已取消保存。";
       return;
     }
 
-    downloadLink.click();
-    saveHint.textContent = error.message || "保存面板打开失败，已改为下载文件。";
+    saveHint.textContent = error.message || "保存面板打开失败，请用 iPhone Safari 打开本网站后再试。";
   } finally {
     setSaveBusy(false);
   }
