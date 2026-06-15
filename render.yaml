@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: video-save-tool
+    env: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: MAX_FILESIZE
+        value: 250M
+      - key: MAX_DOWNLOAD_SECONDS
+        value: "180"
