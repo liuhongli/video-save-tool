@@ -97,6 +97,78 @@ button:hover {
   background: #194f52;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.status {
+  display: grid;
+  gap: 10px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: #293243;
+  font-size: 14px;
+}
+
+.progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e7edf5;
+}
+
+.progress-bar {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: #2f6f73;
+  transition: width 180ms ease;
+}
+
+.preview {
+  display: grid;
+  gap: 14px;
+}
+
+video {
+  width: 100%;
+  max-height: 420px;
+  border-radius: 8px;
+  background: #0f172a;
+}
+
+.save-link {
+  display: inline-grid;
+  min-height: 48px;
+  place-items: center;
+  border-radius: 8px;
+  background: #1f5f63;
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.save-link:hover {
+  background: #194f52;
+}
+
+.hint {
+  margin: 0;
+  color: #5f6b7a;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+[hidden] {
+  display: none !important;
+}
+
 @media (max-width: 520px) {
   .shell {
     padding: 14px;
