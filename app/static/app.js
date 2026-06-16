@@ -30,7 +30,7 @@ function setBusy(isBusy) {
 
 function setSaveBusy(isBusy) {
   saveToAlbumButton.disabled = isBusy;
-  saveToAlbumButton.textContent = isBusy ? "正在打开..." : "保存到相册";
+  saveToAlbumButton.textContent = isBusy ? "正在打开..." : "打开视频原文件保存";
 }
 
 function resetCurrentVideo() {
