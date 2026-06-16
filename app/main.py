@@ -7,7 +7,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
@@ -190,7 +190,12 @@ def get_ready_job(job_id: str) -> DownloadJob:
 async def preview_file(job_id: str) -> FileResponse:
     job = get_ready_job(job_id)
     media_type = mimetypes.guess_type(job.file_path.name)[0] or "video/mp4"
-    return FileResponse(job.file_path, media_type=media_type, filename=job.filename)
+    filename = quote(job.filename or "video.mp4")
+    return FileResponse(
+        job.file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": f"inline; filename*=UTF-8''{filename}"},
+    )
 
 
 @app.get("/api/jobs/{job_id}/save")

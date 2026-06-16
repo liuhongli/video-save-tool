@@ -143,7 +143,8 @@ video {
   background: #0f172a;
 }
 
-.save-button {
+.save-button,
+.open-link {
   display: inline-grid;
   min-height: 48px;
   place-items: center;
@@ -158,8 +159,17 @@ video {
   cursor: pointer;
 }
 
+.open-link {
+  background: #eef5f6;
+  color: #1f5f63;
+}
+
 .save-button:hover {
   background: #194f52;
+}
+
+.open-link:hover {
+  background: #dcebed;
 }
 
 .hint {

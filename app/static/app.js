@@ -8,6 +8,7 @@ const progressBar = document.querySelector("#progressBar");
 const previewPanel = document.querySelector("#previewPanel");
 const videoPreview = document.querySelector("#videoPreview");
 const saveToAlbumButton = document.querySelector("#saveToAlbumButton");
+const openVideoLink = document.querySelector("#openVideoLink");
 const saveHint = document.querySelector("#saveHint");
 
 let pollTimer = null;
@@ -73,8 +74,9 @@ async function prepareLocalVideo(job) {
   };
 
   videoPreview.src = currentObjectUrl;
+  openVideoLink.href = job.previewUrl;
   saveToAlbumButton.disabled = false;
-  saveHint.textContent = "点击保存后会打开系统分享面板，请选择“保存视频”或“存储到相册”。";
+  saveHint.textContent = "点击保存会打开系统分享面板；如果没有“保存视频”，点“打开视频原文件”后用 Safari 分享按钮保存。";
 }
 
 async function pollJob(jobId) {
@@ -164,14 +166,14 @@ saveToAlbumButton.addEventListener("click", async () => {
       return;
     }
 
-    saveHint.textContent = "当前浏览器不支持直接保存到相册，请用 iPhone Safari 打开本网站后再试。";
+    saveHint.textContent = "当前浏览器不支持网页文件分享。请点“打开视频原文件”，再用 Safari 分享按钮保存视频。";
   } catch (error) {
     if (error.name === "AbortError") {
       saveHint.textContent = "已取消保存。";
       return;
     }
 
-    saveHint.textContent = error.message || "保存面板打开失败，请用 iPhone Safari 打开本网站后再试。";
+    saveHint.textContent = error.message || "保存面板打开失败。请点“打开视频原文件”，再用 Safari 分享按钮保存视频。";
   } finally {
     setSaveBusy(false);
   }
