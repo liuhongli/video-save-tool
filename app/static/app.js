@@ -13,7 +13,6 @@ const saveHint = document.querySelector("#saveHint");
 
 let pollTimer = null;
 let currentVideo = null;
-let currentObjectUrl = null;
 
 function setProgress(progress, message) {
   const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
@@ -31,15 +30,11 @@ function setBusy(isBusy) {
 
 function setSaveBusy(isBusy) {
   saveToAlbumButton.disabled = isBusy;
-  saveToAlbumButton.textContent = isBusy ? "准备保存..." : "保存到相册";
+  saveToAlbumButton.textContent = isBusy ? "正在打开..." : "保存到相册";
 }
 
 function resetCurrentVideo() {
   currentVideo = null;
-  if (currentObjectUrl) {
-    URL.revokeObjectURL(currentObjectUrl);
-    currentObjectUrl = null;
-  }
 }
 
 async function readError(response) {
@@ -53,30 +48,13 @@ async function readError(response) {
 
 async function prepareLocalVideo(job) {
   saveToAlbumButton.disabled = true;
-  saveHint.textContent = "正在准备本地预览文件...";
+  saveHint.textContent = "正在准备视频播放页...";
 
-  const response = await fetch(job.previewUrl);
-  if (!response.ok) {
-    throw new Error(await readError(response));
-  }
-
-  const blob = await response.blob();
-  const filename = job.filename || "video.mp4";
-  const file = new File([blob], filename, {
-    type: blob.type || "video/mp4",
-  });
-
-  currentObjectUrl = URL.createObjectURL(blob);
-  currentVideo = {
-    ...job,
-    file,
-    objectUrl: currentObjectUrl,
-  };
-
-  videoPreview.src = currentObjectUrl;
+  currentVideo = job;
+  videoPreview.src = job.previewUrl;
   openVideoLink.href = job.previewUrl;
   saveToAlbumButton.disabled = false;
-  saveHint.textContent = "点击保存会打开系统分享面板；如果没有“保存视频”，点“打开视频原文件”后用 Safari 分享按钮保存。";
+  saveHint.textContent = "点击保存会打开视频原文件页面；打开后点 Safari 分享按钮，再选择“保存视频”。";
 }
 
 async function pollJob(jobId) {
@@ -93,7 +71,7 @@ async function pollJob(jobId) {
     pollTimer = null;
     setBusy(false);
     previewPanel.hidden = false;
-    setProgress(100, "视频已下载，正在准备本地预览...");
+    setProgress(100, "视频已下载，正在准备播放页...");
     await prepareLocalVideo(job);
     setProgress(100, "下载完成，可以预览或保存到相册");
     return;
@@ -148,33 +126,12 @@ form.addEventListener("submit", async (event) => {
 });
 
 saveToAlbumButton.addEventListener("click", async () => {
-  if (!currentVideo?.file) {
+  if (!currentVideo?.previewUrl) {
     saveHint.textContent = "视频文件还没有准备好，请稍等。";
     return;
   }
 
   setSaveBusy(true);
-  saveHint.textContent = "正在打开系统保存面板...";
-
-  try {
-    if (navigator.canShare?.({ files: [currentVideo.file] }) && navigator.share) {
-      await navigator.share({
-        files: [currentVideo.file],
-        title: "保存视频",
-      });
-      saveHint.textContent = "如果系统面板里有“保存视频”，选择后即可保存到相册。";
-      return;
-    }
-
-    saveHint.textContent = "当前浏览器不支持网页文件分享。请点“打开视频原文件”，再用 Safari 分享按钮保存视频。";
-  } catch (error) {
-    if (error.name === "AbortError") {
-      saveHint.textContent = "已取消保存。";
-      return;
-    }
-
-    saveHint.textContent = error.message || "保存面板打开失败。请点“打开视频原文件”，再用 Safari 分享按钮保存视频。";
-  } finally {
-    setSaveBusy(false);
-  }
+  saveHint.textContent = "正在打开视频原文件页面...";
+  window.location.href = currentVideo.previewUrl;
 });
